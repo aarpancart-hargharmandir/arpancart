@@ -1,0 +1,11 @@
+import bcrypt from 'bcryptjs';
+import pg from 'pg';
+const {Pool}=pg;
+const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.NODE_ENV==='production'?{rejectUnauthorized:false}:false});
+const email=process.env.ADMIN_EMAIL;
+const password=process.env.ADMIN_PASSWORD;
+if(!email||!password)throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD');
+const hash=await bcrypt.hash(password,12);
+await pool.query('insert into admins(email,password_hash) values($1,$2) on conflict(email) do update set password_hash=excluded.password_hash',[email,hash]);
+console.log(`Admin seeded: ${email}`);
+await pool.end();
